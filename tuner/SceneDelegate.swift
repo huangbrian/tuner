@@ -8,6 +8,7 @@
 
 import UIKit
 import SwiftUI
+import AVKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -29,8 +30,58 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.window = window
             window.makeKeyAndVisible()
         }
+        
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+            case .authorized: // The user has previously granted access to the camera.
+                self.setupCaptureSession()
+            
+            case .notDetermined: // The user has not yet been asked for camera access.
+                AVCaptureDevice.requestAccess(for: .audio) { granted in
+                    if granted {
+                        self.setupCaptureSession()
+                    }
+                }
+            
+            case .denied: // The user has previously denied access.
+                return
+
+
+            case .restricted: // The user can't grant access due to restrictions.
+                return
+        @unknown default:
+            return
+        }
     }
 
+    func setupCaptureSession() {
+        // Create the capture session.
+        let captureSession = AVCaptureSession()
+
+
+        // Find the default audio device.
+        guard let audioDevice = AVCaptureDevice.default(for: .audio) else { return }
+        var audioInput : AVCaptureDeviceInput? = nil
+        var audioOutput : AVCaptureAudioDataOutput? = nil
+
+
+        do {
+            // Wrap the audio device in a capture device input.
+            audioInput = try AVCaptureDeviceInput(device: audioDevice)
+            audioOutput = AVCaptureAudioDataOutput()
+            // If the input can be added, add it to the session.
+            if captureSession.canAddInput(audioInput!) {
+                captureSession.addInput(audioInput!)
+            }
+            if captureSession.canAddOutput(audioOutput!) {
+                captureSession.addOutput(audioOutput!)
+            }
+        } catch {
+            // Configuration failed. Handle error.
+        }
+//        captureSession.startRunning()
+        
+    }
+    
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
         // This occurs shortly after the scene enters the background, or when its session is discarded.
